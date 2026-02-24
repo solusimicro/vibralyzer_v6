@@ -1,37 +1,52 @@
 # main.py
 
 import time
-from sampler import get_window
-from preprocess import remove_dc, hanning_window
-from features import acc_rms, hf_rms, crest_factor
-from thresholds import evaluate
-from mqtt_client import connect, publish
+import gc
+from state_machine import StateMachine
+from signal_engine import SignalEngine
+from feature_engine import FeatureEngine
+from mqtt_engine import MQTTEngine
+from config import ACC_RMS_ALARM, CREST_ALARM
 
-def run():
-    connect()
+def main():
+
+    sm = StateMachine()
+    sig = SignalEngine()
+    feat = FeatureEngine()
+    mqtt = MQTTEngine()
+
+    sm.set("CONNECT")
+    mqtt.connect()
+
+    sm.set("RUN")
 
     while True:
-        signal = get_window()
-        signal = remove_dc(signal)
-        signal = hanning_window(signal)
 
-        rms = acc_rms(signal)
-        hf = hf_rms(signal)
-        crest = crest_factor(signal)
+        buffer = sig.sample()
+        buffer = sig.preprocess()
 
-        state = evaluate(rms, hf, crest)
+        acc = feat.rms(buffer)
+        crest = feat.crest(buffer)
+
+        state = "NORMAL"
+
+        if acc > ACC_RMS_ALARM:
+            state = "ALARM"
+        elif crest > CREST_ALARM:
+            state = "EARLY_WARNING"
 
         payload = {
-            "acc_rms_g": rms,
-            "acc_hf_rms_g": hf,
+            "acc_rms_g": acc,
             "crest_factor": crest,
             "state": state
         }
 
-        publish(payload)
-        print(payload)
+        mqtt.publish(payload)
 
+        gc.collect()
         time.sleep(1)
 
+
 if __name__ == "__main__":
-    run()
+    main()
+
