@@ -1,0 +1,15 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Build output / cache (umum)
+temp/
+.cache/
+
+# Environment / secrets
+.env
+venv/
