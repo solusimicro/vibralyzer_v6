@@ -12,4 +12,5 @@ temp/
 
 # Environment / secrets
 .env
+.venv/
 venv/

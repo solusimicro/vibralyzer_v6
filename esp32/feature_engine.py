@@ -1,6 +1,4 @@
-# feature_engine.py
-
-from compat import np
+from ulab import numpy as np
 
 class FeatureEngine:
 
@@ -9,5 +7,11 @@ class FeatureEngine:
 
     def crest(self, sig):
         r = self.rms(sig)
-        p = float(np.max(np.abs(sig)))
-        return p/r if r else 0
+        peak = float(np.max(np.abs(sig)))
+        return peak/r if r else 0
+
+    def hf_rms(self, sig):
+        # high-pass sederhana via differentiation
+        diff = np.diff(sig)
+        return float(np.sqrt(np.mean(diff*diff)))
+

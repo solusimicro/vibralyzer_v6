@@ -1,15 +1,32 @@
 # config.py
 
+# ==========================================================
+# SYSTEM MODE
+# ==========================================================
 MODE = "PC"        # change to "ESP32" when deploying
 
+# ==========================================================
+# SAMPLING CONFIG
+# ==========================================================
 FS = 1024
 WINDOW_SIZE = 1024
 
-ACC_RMS_ALARM = 0.3
-CREST_ALARM = 4.0
+# ==========================================================
+# THRESHOLD CONFIG
+# ==========================================================
+ACC_RMS_WARNING = 0.2
+ACC_RMS_ALARM   = 0.3
 
+VEL_WARNING = 2.8      # mm/s (ISO typical)
+VEL_ALARM   = 4.5
+
+CREST_LIMIT = 4.0
+HF_LIMIT    = 0.08
+
+# ==========================================================
+# MQTT CONFIG
+# ==========================================================
 MQTT_BROKER = "localhost"
-MQTT_PORT = 1883
-MQTT_TOPIC = "vibration/l1/SITE_A/PUMP_01"
-CLIENT_ID = "EDGE_PUMP_01"
-
+MQTT_PORT   = 1883
+MQTT_TOPIC  = "vibration/l1/SITE_A/PUMP_01"
+CLIENT_ID   = "EDGE_PUMP_01"
