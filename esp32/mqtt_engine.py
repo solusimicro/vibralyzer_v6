@@ -1,8 +1,8 @@
-# mqtt_engine.py
+import json
+import config
+from compat import PLATFORM
 
-from config import MODE, MQTT_BROKER, MQTT_PORT, MQTT_TOPIC, CLIENT_ID
-
-if MODE == "ESP32":
+if PLATFORM == "ESP32":
     from umqtt.simple import MQTTClient
 else:
     import paho.mqtt.client as mqtt
@@ -12,29 +12,33 @@ class MQTTEngine:
 
     def __init__(self):
 
-        if MODE == "ESP32":
-            self.client = MQTTClient(CLIENT_ID, MQTT_BROKER)
-
-        else:
-            self.client = mqtt.Client(
-                client_id=CLIENT_ID,
-                protocol=mqtt.MQTTv311,
-                transport="tcp",
-                callback_api_version=mqtt.CallbackAPIVersion.VERSION2
+        if PLATFORM == "ESP32":
+            self.client = MQTTClient(
+                config.DEVICE_ID,
+                config.MQTT_BROKER,
+                port=config.MQTT_PORT
             )
+        else:
+            self.client = mqtt.Client(client_id=config.DEVICE_ID)
 
     def connect(self):
-        if MODE == "ESP32":
+        if PLATFORM == "ESP32":
             self.client.connect()
         else:
-            self.client.connect(MQTT_BROKER, MQTT_PORT, 60)
+            self.client.connect(config.MQTT_BROKER, config.MQTT_PORT, 60)
+            self.client.loop_start()
 
     def publish(self, payload):
 
-        import json
+        topic = f"vibration/l1/{config.SITE}/{config.ASSET}/{config.DEVICE_ID}"
+        self.client.publish(topic, json.dumps(payload))
 
-        self.client.publish(MQTT_TOPIC, json.dumps(payload))
-        print("MQTT:", payload)
+        if PLATFORM == "PC":
+            print(topic, payload)
+
+
+
+
 
 
 

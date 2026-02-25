@@ -1,30 +1,46 @@
-from config import *
+import config
 
-def evaluate(acc, vel, crest, hf):
 
-    score = 0
+class L1Logic:
 
-    if acc > ACC_WARNING:
-        score += 1
-    if acc > ACC_ALARM:
-        score += 1
+    def iso_zone(self, vel):
+        if vel < config.VEL_WARNING:
+            return "ZONE_A"
+        elif vel < config.VEL_ALARM:
+            return "ZONE_B"
+        elif vel < 7.1:
+            return "ZONE_C"
+        else:
+            return "ZONE_D"
 
-    if vel > VEL_WARNING:
-        score += 1
-    if vel > VEL_ALARM:
-        score += 1
+    def health_index(self, acc, crest, hf):
+        score = 1.0
 
-    if crest > CREST_LIMIT:
-        score += 1
+        if acc > config.ACC_RMS_ALARM:
+            score -= 0.3
+        if crest > config.CREST_LIMIT:
+            score -= 0.3
+        if hf > config.HF_LIMIT:
+            score -= 0.3
 
-    if hf > HF_LIMIT:
-        score += 1
+        return max(score, 0)
 
-    if score <= 1:
-        return "NORMAL"
-    elif score <= 3:
-        return "WARNING"
-    elif score <= 4:
-        return "ALARM"
-    else:
-        return "CRITICAL"
+    def evaluate(self, features):
+
+        acc = features["acc_rms"]
+        vel = features["vel_rms"]
+        crest = features["crest"]
+        hf = features["hf"]
+
+        iso = self.iso_zone(vel)
+        health = self.health_index(acc, crest, hf)
+
+        state = "NORMAL"
+
+        if iso in ("ZONE_C", "ZONE_D"):
+            state = "ALARM"
+        elif health < 0.7:
+            state = "WARNING"
+
+        return iso, health, state
+

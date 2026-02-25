@@ -1,32 +1,29 @@
-# config.py
+# ===== DEVICE IDENTITY =====
+SITE = "SITE_A"
+ASSET = "PUMP_01"
+DEVICE_ID = "EDGE_PUMP_01"
+FIRMWARE = "L1_v2.0"
 
-# ==========================================================
-# SYSTEM MODE
-# ==========================================================
-MODE = "PC"        # change to "ESP32" when deploying
-
-# ==========================================================
-# SAMPLING CONFIG
-# ==========================================================
+# ===== SIGNAL CONFIG =====
 FS = 1024
 WINDOW_SIZE = 1024
 
-# ==========================================================
-# THRESHOLD CONFIG
-# ==========================================================
-ACC_RMS_WARNING = 0.2
-ACC_RMS_ALARM   = 0.3
-
-VEL_WARNING = 2.8      # mm/s (ISO typical)
-VEL_ALARM   = 4.5
-
+# ===== THRESHOLDS =====
+ACC_RMS_ALARM = 0.3
+VEL_WARNING = 2.8
+VEL_ALARM = 4.5
 CREST_LIMIT = 4.0
-HF_LIMIT    = 0.08
+HF_LIMIT = 0.1
 
-# ==========================================================
-# MQTT CONFIG
-# ==========================================================
-MQTT_BROKER = "localhost"
-MQTT_PORT   = 1883
-MQTT_TOPIC  = "vibration/l1/SITE_A/PUMP_01"
-CLIENT_ID   = "EDGE_PUMP_01"
+# ===== WIFI =====
+WIFI_SSID = "YOUR_SSID"
+WIFI_PASSWORD = "YOUR_PASSWORD"
+
+# ===== MQTT =====
+MQTT_BROKER = "127.0.0.1"
+MQTT_PORT = 1883
+
+# ===== WATCHDOG =====
+WDT_TIMEOUT_SEC = 8
+LOOP_DELAY_SEC = 1
+
