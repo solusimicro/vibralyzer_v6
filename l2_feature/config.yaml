@@ -1,0 +1,24 @@
+broker:
+  host: "127.0.0.1"
+  port: 1883
+  topic_sub: "vibration/l1/#"
+
+health:
+  failure_threshold: 0.2
+
+trend:
+  window_size: 20
+  min_samples: 5
+
+machine_classes:
+  CLASS_II:
+    iso: [2.8, 4.5, 7.1]
+    crest:
+      early: 2.5
+      developing: 3.0
+      critical: 3.5
+    vel_slope_alert: 0.2
+    health_decay_alert: -0.04
+
+publish:
+  mode: "layered"   # or consolidated

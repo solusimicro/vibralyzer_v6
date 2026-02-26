@@ -14,12 +14,12 @@ class MQTTEngine:
 
         if PLATFORM == "ESP32":
             self.client = MQTTClient(
-                config.DEVICE_ID,
+                config.DEVICE,
                 config.MQTT_BROKER,
                 port=config.MQTT_PORT
             )
         else:
-            self.client = mqtt.Client(client_id=config.DEVICE_ID)
+            self.client = mqtt.Client(client_id=config.DEVICE)
 
     def connect(self):
         if PLATFORM == "ESP32":
@@ -30,7 +30,7 @@ class MQTTEngine:
 
     def publish(self, payload):
 
-        topic = f"vibration/l1/{config.SITE}/{config.ASSET}/{config.DEVICE_ID}"
+        topic = f"vibration/l1/{config.SITE}/{config.ASSET}/{config.DEVICE}"
         self.client.publish(topic, json.dumps(payload))
 
         if PLATFORM == "PC":

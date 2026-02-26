@@ -52,7 +52,7 @@ def main():
         payload = {
             "site": config.SITE,
             "asset": config.ASSET,
-            "device_id": config.DEVICE_ID,
+            "device": config.DEVICE,
             "firmware": config.FIRMWARE,
             **features,
             "iso_zone": iso,
