@@ -3,7 +3,14 @@ import config
 
 class L1Logic:
 
+    def __init__(self):
+        pass
+
+    # ----------------------------
+    # ISO Zone
+    # ----------------------------
     def iso_zone(self, vel):
+
         if vel < config.VEL_WARNING:
             return "ZONE_A"
         elif vel < config.VEL_ALARM:
@@ -13,18 +20,27 @@ class L1Logic:
         else:
             return "ZONE_D"
 
+    # ----------------------------
+    # Health Index
+    # ----------------------------
     def health_index(self, acc, crest, hf):
+
         score = 1.0
 
         if acc > config.ACC_RMS_ALARM:
             score -= 0.3
+
         if crest > config.CREST_LIMIT:
             score -= 0.3
+
         if hf > config.HF_LIMIT:
             score -= 0.3
 
         return max(score, 0)
 
+    # ----------------------------
+    # Evaluate
+    # ----------------------------
     def evaluate(self, features):
 
         acc = features["acc_rms"]
@@ -42,5 +58,11 @@ class L1Logic:
         elif health < 0.7:
             state = "WARNING"
 
-        return iso, health, state
+        # ✅ RETURN DICTIONARY (NOT TUPLE)
+        return {
+            "iso_zone": iso,
+            "health_index": health,
+            "state": state
+        }
+
 

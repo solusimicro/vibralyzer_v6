@@ -13,13 +13,36 @@ if PLATFORM == "ESP32":
             self.wlan.active(True)
 
         def connect(self):
-            if not self.wlan.isconnected():
-                self.wlan.connect(config.WIFI_SSID, config.WIFI_PASSWORD)
+            try:
+                if not self.wlan.isconnected():
 
-                timeout = 10
-                while not self.wlan.isconnected() and timeout > 0:
-                    time.sleep(1)
-                    timeout -= 1
+                    print("WiFi: Connecting...")
+
+                    self.wlan.connect(
+                        config.WIFI_SSID,
+                        config.WIFI_PASSWORD
+                    )
+
+                    timeout = 10
+
+                    while not self.wlan.isconnected() and timeout > 0:
+                        time.sleep(1)
+                        timeout -= 1
+
+                    if not self.wlan.isconnected():
+                        print("WiFi: Connection Timeout")
+                        return False
+
+                print("WiFi: Connected →", self.wlan.ifconfig())
+                return True
+
+            except OSError as e:
+                print("WiFi OSError:", e)
+                return False
+
+            except Exception as e:
+                print("WiFi Unknown Error:", e)
+                return False
 
         def ensure(self):
             if not self.wlan.isconnected():

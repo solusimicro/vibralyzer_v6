@@ -1,10 +1,7 @@
 import json
 import config
-from compat import PLATFORM
 
-if PLATFORM == "ESP32":
-    from umqtt.simple import MQTTClient
-else:
+if config.COMM_MODE in ("AUTO", "MQTT_ONLY"):
     import paho.mqtt.client as mqtt
 
 
@@ -12,34 +9,50 @@ class MQTTEngine:
 
     def __init__(self):
 
-        if PLATFORM == "ESP32":
-            self.client = MQTTClient(
-                config.DEVICE,
-                config.MQTT_BROKER,
-                port=config.MQTT_PORT
+        self.online = False
+
+        if config.COMM_MODE in ("AUTO", "MQTT_ONLY"):
+            self.client = mqtt.Client(
+                client_id=config.DEVICE_ID,
+                protocol=mqtt.MQTTv311
             )
-        else:
-            self.client = mqtt.Client(client_id=config.DEVICE)
 
+    # ---------------------------------
+    # CONNECT
+    # ---------------------------------
     def connect(self):
-        if PLATFORM == "ESP32":
-            self.client.connect()
-        else:
-            self.client.connect(config.MQTT_BROKER, config.MQTT_PORT, 60)
-            self.client.loop_start()
 
+        try:
+            self.client.connect(
+                config.MQTT_BROKER,
+                config.MQTT_PORT,
+                60
+            )
+            self.client.loop_start()
+            self.online = True
+            return True
+
+        except Exception as e:
+            print("MQTT CONNECT ERROR:", e)
+            self.online = False
+            return False
+
+    # ---------------------------------
+    # PUBLISH
+    # ---------------------------------
     def publish(self, payload):
 
-        topic = f"vibration/l1/{config.SITE}/{config.ASSET}/{config.DEVICE}"
-        self.client.publish(topic, json.dumps(payload))
+        if not self.online:
+            return False
 
-        if PLATFORM == "PC":
-            print(topic, payload)
+        topic = f"vibration/l1/{config.SITE}/{config.ASSET}/{config.DEVICE_ID}"
 
-
-
-
-
-
+        try:
+            self.client.publish(topic, json.dumps(payload))
+            return True
+        except Exception as e:
+            print("MQTT PUBLISH ERROR:", e)
+            self.online = False
+            return False
 
 

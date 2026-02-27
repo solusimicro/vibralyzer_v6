@@ -128,19 +128,25 @@ class InterpretationEngine:
     # =========================================================
     # ROOT EXPLANATION BUILDER
     # =========================================================
-
     def _build_root_indicators(self, payload, trend, fault_type):
 
         indicators = []
 
-        if trend.get("vel_slope", 0) > 0:
+        vel_slope = trend.get("vel_slope", 0)
+        hf_slope = trend.get("hf_slope", 0)
+
+        min_vel_slope = self.cfg.get("min_vel_slope_explain", 0.001)
+        min_hf_slope = self.cfg.get("min_hf_slope_explain", 0.001)
+
+        # Trend explanation with threshold filtering
+        if vel_slope > min_vel_slope:
             indicators.append(
-                f"Velocity increasing trend ({trend['vel_slope']:.3f} mm/s per window)"
+                f"Velocity increasing trend ({vel_slope:.3f} mm/s per window)"
             )
 
-        if trend.get("hf_slope", 0) > 0:
+        if hf_slope > min_hf_slope:
             indicators.append(
-                f"HF RMS increasing ({trend['hf_slope']:.3f} per window)"
+                f"HF RMS increasing ({hf_slope:.3f} per window)"
             )
 
         crest = payload.get("crest", 0)
@@ -157,19 +163,27 @@ class InterpretationEngine:
 
         # Fault-specific explanation
         if fault_type == "BEARING":
-            indicators.append("High-frequency vibration signature typical of bearing defect")
+            indicators.append(
+                "High-frequency vibration signature typical of bearing defect"
+            )
 
         elif fault_type == "UNBALANCE":
-            indicators.append("Dominant 1X rotational vibration characteristic")
+            indicators.append(
+                "Dominant 1X rotational vibration characteristic"
+            )
 
         elif fault_type == "MISALIGNMENT":
-            indicators.append("Elevated 2X harmonic vibration signature")
+            indicators.append(
+                "Elevated 2X harmonic vibration signature"
+            )
 
         elif fault_type == "LOOSENESS":
-            indicators.append("Broadband vibration energy increase")
+            indicators.append(
+                "Broadband vibration energy increase"
+            )
 
         return indicators
-
+   
     # =========================================================
     # MAIN INTERPRETATION
     # =========================================================
