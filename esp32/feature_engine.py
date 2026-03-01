@@ -1,5 +1,12 @@
-from compat import np
-
+# ==========================================
+# Cross Platform NumPy Compatibility
+# ==========================================
+try:
+    from ulab import numpy as np   # ESP32
+    PLATFORM = "ESP32"
+except ImportError:
+    import numpy as np             # PC
+    PLATFORM = "PC"
 
 class FeatureEngine:
 

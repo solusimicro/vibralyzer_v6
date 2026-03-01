@@ -1,58 +1,61 @@
-import json
 import config
+import json
 
-if config.COMM_MODE in ("AUTO", "MQTT_ONLY"):
-    import paho.mqtt.client as mqtt
+if config.MODE == "ESP32":
+    from umqtt.simple import MQTTClient
+else:
+    import paho.mqtt.client as paho
 
 
 class MQTTEngine:
 
     def __init__(self):
 
-        self.online = False
+        self.connected = False
 
-        if config.COMM_MODE in ("AUTO", "MQTT_ONLY"):
-            self.client = mqtt.Client(
-                client_id=config.DEVICE_ID,
-                protocol=mqtt.MQTTv311
-            )
-
-    # ---------------------------------
-    # CONNECT
-    # ---------------------------------
-    def connect(self):
-
-        try:
-            self.client.connect(
+        if config.MODE == "ESP32":
+            self.client = MQTTClient(
+                config.CLIENT_ID,
                 config.MQTT_BROKER,
-                config.MQTT_PORT,
-                60
+                port=config.MQTT_PORT
             )
-            self.client.loop_start()
-            self.online = True
+        else:
+            self.client = paho.Client()
+    
+    def connect(self):
+        try:
+            if config.MODE == "ESP32":
+                self.client.connect()
+            else:
+                self.client.connect(
+                    config.MQTT_BROKER,
+                    config.MQTT_PORT,
+                    60
+                )
+                self.client.loop_start()
+
+            self.connected = True
             return True
 
         except Exception as e:
-            print("MQTT CONNECT ERROR:", e)
-            self.online = False
+            print("MQTT connect failed:", e)
+            self.connected = False
             return False
 
-    # ---------------------------------
-    # PUBLISH
-    # ---------------------------------
     def publish(self, payload):
 
-        if not self.online:
+        if not self.connected:
             return False
 
-        topic = f"vibration/l1/{config.SITE}/{config.ASSET}/{config.DEVICE_ID}"
+        topic = config.MQTT_BASE_TOPIC
 
-        try:
-            self.client.publish(topic, json.dumps(payload))
-            return True
-        except Exception as e:
-            print("MQTT PUBLISH ERROR:", e)
-            self.online = False
-            return False
+        msg = json.dumps(payload)
+
+        if config.MODE == "ESP32":
+            self.client.publish(topic, msg)
+        else:
+            self.client.publish(topic, msg)
+
+        return True
 
 

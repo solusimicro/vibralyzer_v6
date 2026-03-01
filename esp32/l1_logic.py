@@ -24,17 +24,25 @@ class L1Logic:
     # Health Index
     # ----------------------------
     def health_index(self, acc, crest, hf):
+        score = 100
 
-        score = 1.0
-
+        # ACC RMS
+        if acc > config.ACC_RMS_WARNING:
+            score -= 15
         if acc > config.ACC_RMS_ALARM:
-            score -= 0.3
+            score -= 20
 
-        if crest > config.CREST_LIMIT:
-            score -= 0.3
+        # CREST FACTOR
+        if crest > config.CREST_WARNING:
+            score -= 15
+        if crest > config.CREST_ALARM:
+            score -= 20
 
-        if hf > config.HF_LIMIT:
-            score -= 0.3
+        # HIGH FREQUENCY
+        if hf > config.HF_WARNING:
+            score -= 15
+        if hf > config.HF_ALARM:
+            score -= 15
 
         return max(score, 0)
 
