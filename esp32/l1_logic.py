@@ -63,7 +63,7 @@ class L1Logic:
 
         if iso in ("ZONE_C", "ZONE_D"):
             state = "ALARM"
-        elif health < 0.7:
+        elif health <70:
             state = "WARNING"
 
         # ✅ RETURN DICTIONARY (NOT TUPLE)

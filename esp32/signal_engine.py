@@ -102,4 +102,9 @@ class SignalEngine:
     def integrate_velocity(self):
         dt = 1 / FS
         velocity = np.cumsum(self.buffer) * dt
+
+        # Convert m/s → mm/s (ISO standard)
+        velocity = velocity * 1000
+
         return velocity
+

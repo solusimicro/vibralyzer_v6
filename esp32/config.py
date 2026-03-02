@@ -1,82 +1,64 @@
-# ==========================================================
-# SYSTEM IDENTITY (MANDATORY FOR MQTT PAYLOAD)
-# ==========================================================
+# SYSTEM IDENTITY
 SITE  = "SITE_A"
 ASSET = "PUMP_01"
 DEVICE_ID = "EDGE_001"
 FIRMWARE_VERSION = "1.0.0"
-# ==========================================================
+
 # SYSTEM MODE
-# ==========================================================
-MODE = "PC"      # PC | ESP32
+MODE = "PC"       # PC | ESP32
 
-# ==========================================================
 # SAMPLING CONFIG
-# ==========================================================
-FS = 1024        # Sampling frequency (Hz)
-N  = 1024        # Window size (must be power of 2)
+FS = 1024
+N  = 1024
 
-# ==========================================================
-# COMMUNICATION MODE
-# ==========================================================
-COMM_MODE = "AUTO"            # AUTO | MQTT_ONLY | USB_ONLY
-NETWORK_PRIORITY = "LAN_FIRST"  # LAN_FIRST | WIFI_FIRST
+# COMMUNICATION
+COMM_MODE = "AUTO"
+NETWORK_MODE = "DUAL"
+NETWORK_PRIORITY = "LAN_FIRST"
 
-# ==========================================================
-# WIFI CONFIG
-# ==========================================================
+# WIFI
 WIFI_SSID = "Factory_WiFi"
 WIFI_PASSWORD = "12345678"
 
-# ==========================================================
-# ETHERNET CONFIG
-# ==========================================================
+# ETHERNET
 ETHERNET_ENABLED = True
 ETH_DHCP = True
-ETH_IP = "192.168.1.50"
+ETH_IP = "192.168.1.100"
 ETH_GATEWAY = "192.168.1.1"
 ETH_SUBNET = "255.255.255.0"
 
-# ==========================================================
-# MQTT CONFIG
-# ==========================================================
-MQTT_BROKER = "192.168.1.10"
-MQTT_PORT   = 1883
-CLIENT_ID   = "EDGE_PUMP_01"
-
-# Topic akan dibuat dinamis di main.py
+# MQTT
+MQTT_BROKER = "127.0.0.1"
+MQTT_PORT = 1883
+CLIENT_ID = "EDGE_PUMP_01"
 MQTT_BASE_TOPIC = "vibration/l1"
+MQTT_QOS = 1
+MQTT_USER = "user"
+MQTT_PASSWORD = "password"
+MQTT_RETRY_SEC = 5
 
-# ==========================================================
-# USB CONFIG (commissioning only)
-# ==========================================================
+# USB
 SERIAL_BAUDRATE = 115200
 
-# ==========================================================
-# ISO 10816 Velocity Threshold (mm/s RMS)
-# Small machine baseline
-# ==========================================================
-
-# VELOCITY (mm/s RMS)
+# THRESHOLDS
 VEL_WARNING = 2.8
-VEL_ALARM   = 4.5
-
-# ACC RMS (g)
+VEL_ALARM = 4.5
 ACC_RMS_WARNING = 0.3
-ACC_RMS_ALARM   = 0.5
-
-# CREST FACTOR
+ACC_RMS_ALARM = 0.5
 CREST_WARNING = 3.0
-CREST_ALARM   = 4.5
-
-# HIGH FREQUENCY RMS
+CREST_ALARM = 4.5
 HF_WARNING = 0.2
-HF_ALARM   = 0.35
+HF_ALARM = 0.35
 
-# ==========================================================
-# HEALTH INDEX WEIGHTING (for future ML-ready scoring)
-# ==========================================================
+# HEALTH INDEX WEIGHT
 WEIGHT_ACC   = 0.4
 WEIGHT_VEL   = 0.3
 WEIGHT_CREST = 0.2
 WEIGHT_HF    = 0.1
+
+# WATCHDOG
+WDT_TIMEOUT_SEC = 10
+
+# LOGGING
+LOG_ENABLE = True
+LOG_PATH = "/sdcard/logs"

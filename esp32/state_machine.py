@@ -7,3 +7,5 @@ class StateMachine:
         self.state = s
         print("STATE ->", s)
 
+    def get(self):
+        return self.state
