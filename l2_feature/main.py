@@ -7,6 +7,7 @@ Industrial Clean Architecture
 
 import yaml
 import json
+import logging
 
 from mqtt_client import MQTTClient
 from data_buffer import DataBuffer
@@ -18,7 +19,7 @@ from rul_engine import ProbabilisticRUL
 from interpretation import InterpretationEngine
 from publisher import L2Publisher
 from fleet_risk import FleetRiskEngine
-import logging
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -62,106 +63,143 @@ fleet_engine = FleetRiskEngine()
 
 def on_message(client, userdata, msg):
 
-    payload = json.loads(msg.payload.decode())
+    try:
 
-    asset_id = payload.get("asset")
-    device_id = payload.get("device")
+        payload = json.loads(msg.payload.decode())
 
-    if not asset_id or not device_id:
-        return
+        asset_id = payload.get("asset")
+        device_id = payload.get("device")
 
-    # -------------------------
-    # BUFFER
-    # -------------------------
-    buffer.update(asset_id, device_id, payload)
-    data = buffer.get(asset_id, device_id)
+        if not asset_id or not device_id:
+            return
 
-    if not data:
-        return
+        # -------------------------
+        # BUFFER
+        # -------------------------
+        buffer.update(asset_id, device_id, payload)
+        data = buffer.get(asset_id, device_id)
 
-    # -------------------------
-    # TREND
-    # -------------------------
-    trend = trend_engine.analyze(data)
+        if not data:
+            return
 
-    # -------------------------
-    # RULE
-    # -------------------------
-    rule_out = rule_engine.evaluate(payload, trend)
+        # -------------------------
+        # TREND
+        # -------------------------
+        trend = trend_engine.analyze(data)
 
-    # -------------------------
-    # INTERPRETATION
-    # -------------------------
-    interpret_out = interpret_engine.interpret(
-        payload,
-        trend,
-        rule_out
-    )
+        # -------------------------
+        # RULE
+        # -------------------------
+        rule_out = rule_engine.evaluate(payload, trend)
 
-    # -------------------------
-    # RUL
-    # -------------------------
-    health_series = list(data["health"])
-    rul_output = rul_engine.calculate(health_series)
+        # -------------------------
+        # INTERPRETATION
+        # -------------------------
+        interpret_out = interpret_engine.interpret(
+            payload,
+            trend,
+            rule_out
+        )
 
-    # -------------------------
-    # FINAL STATUS (Use Interpretation)
-    # -------------------------
-    final_status = final_engine.determine(
-        payload,
-        interpret_out
-    )
+        # -------------------------
+        # RUL
+        # -------------------------
+        health_series = list(data["health"])
+        rul_output = rul_engine.calculate(health_series)
 
-    # -------------------------
-    # RECOMMENDATION
-    # -------------------------
-    recommendation = recommend_engine.generate(
-        asset_id=asset_id,
-        final_status=final_status,
-        fault_type=interpret_out.get("fault_type"),
-        fault_stage=interpret_out.get("fault_stage"),
-        estimated_rul_days=rul_output.get("rul_expected_days"),
-    )
-    
-    # -------------------------
-    # ASSET RISK
-    # --------------------------
-    asset_risk = fleet_engine.calculate_asset_risk(
-        asset_id=asset_id,
-        severity_score=interpret_out.get("severity_score", 0),
-        prob_failure_7d=rul_output.get("prob_failure_7d", 0),
-        final_status=final_status,
-    )
+        # -------------------------
+        # FINAL STATUS
+        # -------------------------
+        final_status = final_engine.determine(
+            payload,
+            interpret_out
+        )
 
-    fleet_risk = fleet_engine.calculate_fleet_risk()
+        # -------------------------
+        # RECOMMENDATION
+        # -------------------------
+        recommendation = recommend_engine.generate(
+            asset_id=asset_id,
+            final_status=final_status,
+            fault_type=interpret_out.get("fault_type"),
+            fault_stage=interpret_out.get("fault_stage"),
+            estimated_rul_days=rul_output.get("rul_expected_days"),
+        )
 
-    if fleet_risk:
-        publisher.publish_fleet_risk(fleet_risk)
+        # -------------------------
+        # ASSET RISK
+        # -------------------------
+        asset_risk = fleet_engine.calculate_asset_risk(
+            asset_id=asset_id,
+            severity_score=interpret_out.get("severity_score", 0),
+            prob_failure_7d=rul_output.get("prob_failure_7d", 0),
+            final_status=final_status,
+        )
 
-    # -------------------------
-    # OUTPUT MERGE (Clean)
-    # -------------------------
-    output = {
-        **payload,
-        **interpret_out,   # Already includes fault_type & confidence refined
-        **rul_output,
-        "final_status": final_status,
-        **recommendation,
-        **asset_risk,
-    }
+        # -------------------------
+        # FLEET RISK
+        # -------------------------
+        fleet_risk = fleet_engine.calculate_fleet_risk()
 
-    # -------------------------
-    # PUBLISH
-    # -------------------------
-    mode = config["publish"]["mode"]
+        # -------------------------
+        # OUTPUT MERGE
+        # -------------------------
+        output = {
+            **payload,
+            **interpret_out,
+            **rul_output,
+            "final_status": final_status,
+            **recommendation,
+            **asset_risk,
+        }
 
-    if mode == "layered":
-        #publisher.publish_rule(asset_id, device_id, rule_out) --> add topic in publsher
-        publisher.publish_interpretation(asset_id, device_id, interpret_out)
-        publisher.publish_rul(asset_id, device_id, rul_output)
-        #publisher.publish_recommendation(asset_id, device_id, recommendation) --> add topic in publsher
+        # =====================================================
+        # PUBLISH
+        # =====================================================
 
-    publisher.publish_final(asset_id, device_id, output)
+        mode = config["publish"]["mode"]
+
+        if mode == "layered":
+
+            publisher.publish_features(asset_id, device_id, payload)
+
+            publisher.publish_interpretation(
+                asset_id,
+                device_id,
+                interpret_out
+            )
+
+            publisher.publish_rul(
+                asset_id,
+                device_id,
+                rul_output
+            )
+
+            publisher.publish_recommendation(
+                asset_id,
+                device_id,
+                recommendation
+            )
+
+            publisher.publish_asset_risk(
+                asset_id,
+                asset_risk
+            )
+
+            if fleet_risk:
+                publisher.publish_fleet_risk(fleet_risk)
+
+        # Always publish consolidated
+        publisher.publish_final(
+            asset_id,
+            device_id,
+            output
+        )
+
+    except Exception as e:
+
+        logging.error(f"L2 processing error: {e}")
+
 
 # ==========================================================
 # START MQTT
@@ -180,7 +218,6 @@ publisher = L2Publisher(
 )
 
 publisher.publish_heartbeat()
+logging.info("L2 Feature Engine Started")
 
 mqtt_client.loop_forever()
-
-
