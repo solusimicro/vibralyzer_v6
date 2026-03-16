@@ -46,11 +46,15 @@ class InterpretationEngine:
 
         crest = payload.get("crest", 0)
 
-        if crest > self.cfg["crest"]["critical"]:
-            score += 30
-        elif crest > self.cfg["crest"]["developing"]:
+        crest_crit = self.cfg.get("crest", {}).get("critical", 4.0)
+        crest_dev = self.cfg.get("crest", {}).get("developing", 2.5)
+        crest_early = self.cfg.get("crest", {}).get("early", 1.8)
+        
+        if crest > crest_crit:
+          score += 30
+        elif crest > crest_dev:
             score += 20
-        elif crest > self.cfg["crest"]["early"]:
+        elif crest > crest_early:
             score += 10
 
         if trend.get("vel_slope", 0) > self.cfg["vel_slope_alert"]:
@@ -73,43 +77,61 @@ class InterpretationEngine:
 
     def _validate_fault_pattern(self, payload, trend, fault_type):
 
-        score = 0
+      score = 0
 
-        vel = payload.get("vel_rms", 0)
-        crest = payload.get("crest", 0)
-        hf = payload.get("hf", 0)
+      vel = payload.get("vel_rms", 0)
+      crest = payload.get("crest", 0)
+      hf = payload.get("hf", 0)
 
-        # Bearing pattern validation
-        if fault_type == "BEARING":
-            if hf > self.cfg["hf"]["alert"]:
-                score += 1
-            if crest > self.cfg["crest"]["developing"]:
-                score += 1
-            if trend.get("hf_slope", 0) > 0:
-                score += 1
+      vel_warn = self.cfg.get("velocity", {}).get("warning", 4.5)
+      crest_early = self.cfg.get("crest", {}).get("early", 1.8)
+      crest_dev = self.cfg.get("crest", {}).get("developing", 2.5)
+      hf_alert = self.cfg.get("hf", {}).get("alert", 0.2)
 
-        # Unbalance pattern validation
-        elif fault_type == "UNBALANCE":
-            if vel > self.cfg["velocity"]["warning"]:
-                score += 1
-            if trend.get("vel_slope", 0) > 0:
-                score += 1
+      min_hf_slope = self.cfg.get("min_hf_slope_explain", 0.001)
+      min_vel_slope = self.cfg.get("min_vel_slope_explain", 0.001)
 
-        # Misalignment pattern validation
-        elif fault_type == "MISALIGNMENT":
-            if crest > self.cfg["crest"]["early"]:
-                score += 1
-            if vel > self.cfg["velocity"]["warning"]:
-                score += 1
+      # Bearing pattern validation
+      if fault_type == "BEARING":
 
-        # Looseness pattern validation
-        elif fault_type == "LOOSENESS":
-            if vel > self.cfg["velocity"]["warning"]:
-                score += 1
-            if crest > self.cfg["crest"]["early"]:
-                score += 1
+          if hf > hf_alert:
+              score += 1
 
-        return score  # 0–3 scale
+          if crest > crest_dev:
+              score += 1
+
+          if trend.get("hf_slope", 0) > min_hf_slope:
+              score += 1
+
+      # Unbalance pattern validation
+      elif fault_type == "UNBALANCE":
+
+          if vel > vel_warn:
+              score += 1
+
+          if trend.get("vel_slope", 0) > min_vel_slope:
+              score += 1
+
+      # Misalignment pattern validation
+      elif fault_type == "MISALIGNMENT":
+
+          if crest > crest_early:
+              score += 1
+
+          if vel > vel_warn:
+              score += 1
+
+      # Looseness pattern validation
+      elif fault_type == "LOOSENESS":
+
+          if vel > vel_warn:
+              score += 1
+
+          if crest > crest_early:
+              score += 1
+
+      return score
+
 
     # =========================================================
     # DOMINANT INDICATOR (Physics Driver)
@@ -193,7 +215,10 @@ class InterpretationEngine:
         fault_type = rule_output.get("fault_type", "NORMAL")
         fault_stage = rule_output.get("fault_stage", "NONE")
         base_confidence = rule_output.get("confidence", 0.0)
-
+        
+        # ✅ Validasi health_index
+        payload["health_index"] = max(0.0, min(payload.get("health_index", 1.0), 1.0))
+        
         # 1️⃣ Legacy severity
         severity_score = self._severity_score(
             payload,

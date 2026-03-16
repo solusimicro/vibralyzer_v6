@@ -62,17 +62,21 @@ class SeverityIndex:
         return 10
 
     def _score_vel_trend(self, vel_slope):
-        if vel_slope > self.cfg["vel_slope_alert"] * 2:
+        if vel_slope > self.cfg.get("vel_slope_alert", 0.01) * 2:
             return 85
-        elif vel_slope > self.cfg["vel_slope_alert"]:
+        elif vel_slope > self.cfg.get("vel_slope_alert", 0.01):
             return 60
         elif vel_slope > 0:
             return 40
         return 10
 
     def _score_health(self, health):
-        # health 1.0 = perfect
-        return int((1 - health) * 100)
+        """
+        health = payload['health_index'] di L1 logic (0-100)
+        normalisasi ke 0..1
+        """
+        health_norm = max(0, min(health, 100)) / 100.0
+        return int((1 - health_norm) * 100)
 
     # --------------------------------------------------------
     # Final Index
@@ -83,10 +87,15 @@ class SeverityIndex:
         Main ISI calculation.
         """
 
-        iso_score = self._score_iso(payload["iso_zone"])
-        crest_score = self._score_crest(payload["crest"])
-        hf_score = self._score_hf_trend(trend["hf_slope"])
-        vel_score = self._score_vel_trend(trend["vel_slope"])
+        # pastikan health_index valid
+        health_index = payload.get("health_index", 100)
+        health_index = max(0, min(health_index, 100))
+        payload["health_index"] = health_index
+
+        iso_score = self._score_iso(payload.get("iso_zone", "ZONE_A"))
+        crest_score = self._score_crest(payload.get("crest", 0))
+        hf_score = self._score_hf_trend(trend.get("hf_slope", 0))
+        vel_score = self._score_vel_trend(trend.get("vel_slope", 0))
         health_score = self._score_health(payload["health_index"])
 
         isi = (
